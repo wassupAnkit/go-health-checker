@@ -1,0 +1,9 @@
+{
+    "_comment": "This is a JSON file containing a list of services to be monitored.",
+    "_comment2": "The services are specified as URLs.",
+    "services": [
+      "https://google.com",
+      "https://github.com",
+      "https://nonexistent.example.org"
+    ]
+  }
