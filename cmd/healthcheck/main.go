@@ -10,29 +10,27 @@ import (
 )
 
 func main() {
+	// Parse command-line flags
 	cfgPath := flag.String("config", "services.json", "Path to config file")
 	flag.Parse()
 
-	cfg, err := config.Load(*cfgPath)
+	// Load URLs from the config file
+	urls, err := config.LoadConfig(*cfgPath)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	results := make(chan checker.Result)
-	for _, url := range cfg.Services {
-		go func(u string) {
-			result := checker.Check(u)
-			results <- result
-		}(url)
-	}
+	fmt.Println("🔍 Checking URLs...")
 
-	// Collect results
-	for i := 0; i < len(cfg.Services); i++ {
-		res := <-results
-		if res.Alive {
-			fmt.Printf("✅ %s [%d]\n", res.URL, res.Status)
+	// Run all URL checks concurrently
+	results := checker.CheckAll(urls)
+
+	// Print results
+	for _, result := range results {
+		if result.Error != nil {
+			fmt.Printf("❌ %s (%v)\n", result.URL, result.Error)
 		} else {
-			fmt.Printf("❌ %s (%v)\n", res.URL, res.Err)
+			fmt.Printf("✅ %s [%d]\n", result.URL, result.StatusCode)
 		}
 	}
 }
