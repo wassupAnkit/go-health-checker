@@ -11,12 +11,12 @@ import (
 )
 
 func main() {
-	// Parse command-line flags
+	// Command-line flags
 	cfgPath := flag.String("config", "services.json", "Path to config file")
-	format := flag.String("format", "text", "Output format: text or json")
+	format := flag.String("format", "text", "Output format: 'text' or 'json'")
 	flag.Parse()
 
-	// Load URLs from the config file
+	// Load URLs from config
 	urls, err := config.Load(*cfgPath)
 	if err != nil {
 		fmt.Println("❌ Error loading config:", err)
@@ -25,24 +25,37 @@ func main() {
 
 	fmt.Println("🔍 Checking URLs...")
 
-	// Run health checks with retries
-	results := checker.CheckAll(urls.Services, 3)
+	// Run checks concurrently with retries
+	results := checker.CheckAll(urls.Services)
 
-	// Display results
+	// Output results in desired format
 	if *format == "json" {
-		output, err := json.MarshalIndent(results, "", "  ")
+		jsonOutput, err := json.MarshalIndent(results, "", "  ")
 		if err != nil {
-			fmt.Println("❌ Failed to marshal JSON:", err)
+			fmt.Println("❌ Failed to encode JSON:", err)
 			os.Exit(1)
 		}
-		fmt.Println(string(output))
+		fmt.Println(string(jsonOutput))
 	} else {
-		for _, result := range results {
-			if result.Error != nil {
-				fmt.Printf("❌ %s (%v)\n", result.URL, result.Error)
+		for _, r := range results {
+			if r.Error == nil {
+				fmt.Printf("✅ %s [%d]\n", r.URL, r.StatusCode)
 			} else {
-				fmt.Printf("✅ %s [%d]\n", result.URL, result.StatusCode)
+				fmt.Printf("❌ %s (%s)\n", r.URL, r.Error)
 			}
 		}
 	}
+
+	// Determine exit code for CI/CD
+	hasError := false
+	for _, r := range results {
+		if r.Error != nil {
+			hasError = true
+			break
+		}
+	}
+	if hasError {
+		os.Exit(1) // At least one failure
+	}
+	os.Exit(0) // All passed
 }
