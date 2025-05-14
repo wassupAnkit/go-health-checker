@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/wassupAnkit/go-health-checker/internal/checker"
-	"github.com/wassupAnkit/go-health-checker/internal/config"
+	"go-health-checker/internal/checker"
+	"go-health-checker/internal/config"
 )
 
 func main() {
